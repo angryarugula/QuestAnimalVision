@@ -1,7 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 public class SourceManager : MonoBehaviour
 {
     static SourceManager inst;
@@ -24,6 +25,10 @@ public class SourceManager : MonoBehaviour
 
     public GameObject hintRoot;
 
+    public GameObject forwardInstRoot;
+    public GameObject sideInstRoot;
+    public GameObject freeInstRoot;
+
     int currentVisionType;
 
     private void Awake()
@@ -32,6 +37,9 @@ public class SourceManager : MonoBehaviour
     }
     private IEnumerator Start()
     {
+        if (Display.displays.Length > 1)
+            Display.displays[1].Activate();
+
         Texture.streamingTextureForceLoadAll = true;
 
         foreach (var d in WebCamTexture.devices)
@@ -49,6 +57,8 @@ public class SourceManager : MonoBehaviour
         Ready = true;
 
         SetVisionType(0);
+
+
     }
 
     private void Update()
@@ -56,25 +66,33 @@ public class SourceManager : MonoBehaviour
         if (!Ready)
             return;
 
-        if (Input.GetKeyUp(KeyCode.Backslash))
+        
+        if (Keyboard.current.backslashKey.wasPressedThisFrame)
         {
             SwapSources();
         }
 
         for (int i = 0; i < visionTypes.Length; i++)
         {
-            if (Input.GetKeyUp(KeyCode.Alpha1 + i))
+            
+            
+            if (Keyboard.current.GetChildControl<KeyControl>((i + 1).ToString()).wasPressedThisFrame)
             {
                 SetVisionType(i);
             }
         }
 
-        if (Input.GetKeyUp(KeyCode.H))
+        if (Keyboard.current.hKey.wasPressedThisFrame)
             hintRoot.SetActive(!hintRoot.activeSelf);
 
     }
 
-    void SetVisionType(int index)
+    public void ToggleHints()
+    {
+        hintRoot.SetActive(!hintRoot.activeSelf);
+    }
+
+    public void SetVisionType(int index)
     {
         foreach (var go in visionTypes)
             go.SetActive(false);
@@ -82,6 +100,11 @@ public class SourceManager : MonoBehaviour
         visionTypes[index].SetActive(true);
 
         currentVisionType = index;
+
+        //TODO mark which type each is instead of hardcode
+        forwardInstRoot.SetActive(index <= 2);
+        sideInstRoot.SetActive(index > 2 && index < 6);
+        freeInstRoot.SetActive(index == 6);
     }
 
     void SwapSources()
